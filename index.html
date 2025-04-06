@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat Simulator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --whatsapp-green: #128C7E;
+            --whatsapp-light-green: #DCF8C6;
+            --whatsapp-header-green: #075E54;
+            --whatsapp-outgoing-background: #DCF8C6;
+            --whatsapp-incoming-background: #FFFFFF;
+            --whatsapp-chat-background: #E5DDD5;
+            --whatsapp-default-bg: #E5DDD5;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: #F0F2F5;
+        }
+
+        .whatsapp-container {
+            max-width: 500px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            background-color: white;
+            position: relative;
+        }
+
+        /* Upload Screen Styles */
+        .upload-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+            background-color: white;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--whatsapp-green);
+            margin-bottom: 20px;
+        }
+
+        .upload-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .upload-description {
+            color: #666;
+            margin-bottom: 30px;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        .upload-btn {
+            background-color: var(--whatsapp-green);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-upload {
+            display: none;
+        }
+
+        /* Chat Screen Styles (hidden by default) */
+        .chat-screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            background-color: var(--whatsapp-header-green);
+            color: white;
+            height: 59px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .chat-header-info {
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .chat-background {
+            flex: 1;
+            overflow-y: auto;
+            background-color: var(--whatsapp-default-bg);
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAKqNIzIAAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfiAhgLMQ7JxrGOAAABB0lEQVQ4y42TWY6DMBBEn1k8yRmYU2Q5TW4T5QwjD2ImBoNxXFKfD4zGrS67qltNMQm1NMopdKpFrVK7jdkqGPQygJ2UEyA+6WcAYOBiMsxgNPKUop40TjAzg3GhKQCeRaM3AIxBohugOx2pDugH5KlAFPK+Qw6yZahvWKb4Bl3VH3Bv5ciDqtXtF8jbDWrVdEyaNIK5MZdzEgKGUx5EaCvn7QE8A1iRCGd7APwYwC6JsNkDcN9hfDYI4LkN+54kgz34FdDmeDoBYHkEqnwQQdszaJf87QYV/QDLOyDfC+C5E8bzGmNsD/icMYG5x2XEH5glXmEmwm48/3X4jDyCJ5xwwR0nOsU/B+WfmZ/67BEAAAAASUVORK5CYII=');
+            background-size: cover;
+            background-attachment: fixed;
+            padding: 20px 15px 15px;
+            position: relative;
+        }
+
+        .message-container {
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 8px 12px 8px 12px;
+            border-radius: 12px;
+            position: relative;
+            font-size: 14.5px;
+            line-height: 19px;
+            margin-bottom: 1px;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+        }
+
+        .message-outgoing {
+            background-color: var(--whatsapp-outgoing-background);
+            align-self: flex-end;
+            border-top-right-radius: 0;
+        }
+
+        .message-outgoing::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: -8px;
+            width: 12px;
+            height: 16px;
+            background-color: var(--whatsapp-outgoing-background);
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+
+        .message-incoming {
+            background-color: var(--whatsapp-incoming-background);
+            align-self: flex-start;
+            border-top-left-radius: 0;
+        }
+
+        .message-incoming::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -8px;
+            width: 12px;
+            height: 16px;
+            background-color: var(--whatsapp-incoming-background);
+            clip-path: polygon(100% 0, 100% 100%, 0 0);
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: rgba(0, 0, 0, 0.45);
+            margin-left: 6px;
+            position: absolute;
+            right: 8px;
+            bottom: 4px;
+        }
+
+        .message-content {
+            margin-right: 55px;
+            word-wrap: break-word;
+        }
+
+        .message-sender {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #061;
+            margin-bottom: 2px;
+        }
+
+        .date-header {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0;
+            position: sticky;
+            top: 8px;
+            z-index: 2;
+        }
+
+        .date-pill {
+            background-color: #E1F2FB;
+            color: #5A6B75;
+            font-size: 12.5px;
+            border-radius: 8px;
+            padding: 5px 12px;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+        }
+
+        .back-button {
+            color: white;
+            padding-right: 12px;
+            cursor: pointer;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #DFE5E7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #B0B0B0;
+            font-size: 22px;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--whatsapp-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Header action buttons */
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-action-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* Wallpaper modal */
+        .wallpaper-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .wallpaper-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 80%;
+            max-width: 350px;
+        }
+
+        .wallpaper-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .wallpaper-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .wallpaper-option {
+            height: 100px;
+            border-radius: 5px;
+            cursor: pointer;
+            background-size: cover;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .wallpaper-option.selected {
+            border-color: var(--whatsapp-green);
+        }
+
+        .wallpaper-option.default {
+            background-color: var(--whatsapp-default-bg);
+        }
+
+        .wallpaper-option.solid-1 {
+            background-color: #7EC4CF;
+        }
+
+        .wallpaper-option.solid-2 {
+            background-color: #A5D6A7;
+        }
+
+        .wallpaper-option.custom {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+
+        .wallpaper-option.custom label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .wallpaper-option.custom input {
+            display: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background-color: #f0f2f5;
+        }
+
+        .modal-btn.apply {
+            background-color: var(--whatsapp-green);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="whatsapp-container">
+        <!-- Upload Screen (Visible by default) -->
+        <div class="upload-screen" id="upload-screen">
+            <div class="upload-icon">
+                <i class="fab fa-whatsapp"></i>
+            </div>
+            <h1 class="upload-title">WhatsApp Chat Simulator</h1>
+            <p class="upload-description">
+                Upload your exported WhatsApp chat to view it in a familiar interface. 
+                All processing happens in your browser - no data is sent to any server.
+            </p>
+            <button class="upload-btn" id="upload-btn">
+                <i class="fas fa-upload"></i>
+                Upload WhatsApp Chat
+            </button>
+            <input type="file" id="file-upload" class="file-upload" accept=".txt" />
+        </div>
+
+        <!-- Chat Screen (Hidden by default) -->
+        <div class="chat-screen" id="chat-screen">
+            <div class="chat-header">
+                <div class="back-button" id="back-button">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="chat-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="chat-header-info">
+                    <div class="font-medium text-white" id="chat-title">WhatsApp Chat</div>
+                    <div class="text-xs text-gray-200" id="chat-status">Chat loaded</div>
+                </div>
+                <div class="header-actions">
+                    <button class="header-action-btn" id="new-chat-btn" title="New Chat">
+                        <i class="fas fa-comment-alt"></i>
+                    </button>
+                    <button class="header-action-btn" id="wallpaper-btn" title="Change Wallpaper">
+                        <i class="fas fa-image"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-background" id="chat-container"></div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Wallpaper Modal -->
+    <div class="wallpaper-modal" id="wallpaper-modal">
+        <div class="wallpaper-content">
+            <h3 class="wallpaper-title">Select Wallpaper</h3>
+            <div class="wallpaper-options">
+                <div class="wallpaper-option default selected" data-wallpaper="default"></div>
+                <div class="wallpaper-option solid-1" data-wallpaper="solid-1"></div>
+                <div class="wallpaper-option solid-2" data-wallpaper="solid-2"></div>
+                <div class="wallpaper-option custom" data-wallpaper="custom">
+                    <label for="custom-wallpaper">Custom Image</label>
+                    <input type="file" id="custom-wallpaper" accept="image/*">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="cancel-wallpaper">Cancel</button>
+                <button class="modal-btn apply" id="apply-wallpaper">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const uploadScreen = document.getElementById('upload-screen');
+            const chatScreen = document.getElementById('chat-screen');
+            const fileUpload = document.getElementById('file-upload');
+            const uploadBtn = document.getElementById('upload-btn');
+            const backButton = document.getElementById('back-button');
+            const newChatBtn = document.getElementById('new-chat-btn');
+            const wallpaperBtn = document.getElementById('wallpaper-btn');
+            const chatContainer = document.getElementById('chat-container');
+            const chatTitle = document.getElementById('chat-title');
+            const chatStatus = document.getElementById('chat-status');
+            const loadingIndicator = document.getElementById('loading');
+            const wallpaperModal = document.getElementById('wallpaper-modal');
+            const cancelWallpaperBtn = document.getElementById('cancel-wallpaper');
+            const applyWallpaperBtn = document.getElementById('apply-wallpaper');
+            const wallpaperOptions = document.querySelectorAll('.wallpaper-option');
+            const customWallpaperInput = document.getElementById('custom-wallpaper');
+            
+            // Current state
+            let currentWallpaper = 'default';
+            let customWallpaper = null;
+
+            // Event listeners
+            uploadBtn.addEventListener('click', () => fileUpload.click());
+            backButton.addEventListener('click', showUploadScreen);
+            newChatBtn.addEventListener('click', showUploadScreen);
+            wallpaperBtn.addEventListener('click', showWallpaperModal);
+            fileUpload.addEventListener('change', handleFileUpload);
+            cancelWallpaperBtn.addEventListener('click', hideWallpaperModal);
+            applyWallpaperBtn.addEventListener('click', applyWallpaper);
+            
+            // Wallpaper selection
+            wallpaperOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this.dataset.wallpaper === 'custom') return;
+                    selectWallpaperOption(this.dataset.wallpaper);
+                });
+            });
+            
+            customWallpaperInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const customOption = document.querySelector('.wallpaper-option[data-wallpaper="custom"]');
+                        customOption.style.backgroundImage = `url(${event.target.result})`;
+                        customOption.style.backgroundSize = 'cover';
+                        customWallpaper = event.target.result;
+                        selectWallpaperOption('custom');
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            // Select wallpaper option
+            function selectWallpaperOption(wallpaper) {
+                currentWallpaper = wallpaper;
+                wallpaperOptions.forEach(option => {
+                    option.classList.remove('selected');
+                    if (option.dataset.wallpaper === wallpaper) {
+                        option.classList.add('selected');
+                    }
+                });
+            }
+            
+            // Show wallpaper modal
+            function showWallpaperModal() {
+                wallpaperModal.style.display = 'flex';
+            }
+            
+            // Hide wallpaper modal
+            function hideWallpaperModal() {
+                wallpaperModal.style.display = 'none';
+            }
+            
+            // Apply selected wallpaper
+            function applyWallpaper() {
+                const chatBackground = document.querySelector('.chat-background');
+                
+                switch(currentWallpaper) {
+                    case 'default':
+                        chatBackground.style.backgroundImage = 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAQAAABKfvVzAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAKqNIzIAAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfiAhgLMQ7JxrGOAAABB0lEQVQ4y42TWY6DMBBEn1k8yRmYU2Q5TW4T5QwjD2ImBoNxXFKfD4zGrS67qltNMQm1NMopdKpFrVK7jdkqGPQygJ2UEyA+6WcAYOBiMsxgNPKUop40TjAzg3GhKQCeRaM3AIxBohugOx2pDugH5KlAFPK+Qw6yZahvWKb4Bl3VH3Bv5ciDqtXtF8jbDWrVdEyaNIK5MZdzEgKGUx5EaCvn7QE8A1iRCGd7APwYwC6JsNkDcN9hfDYI4LkN+54kgz34FdDmeDoBYHkEqnwQQdszaJf87QYV/QDLOyDfC+C5E8bzGmNsD/icMYG5x2XEH5glXmEmwm48/3X4jDyCJ5xwwR0nOsU/B+WfmZ/67BEAAAAASUVORK5CYII=")';
+                        chatBackground.style.backgroundColor = 'var(--whatsapp-default-bg)';
+                        break;
+                    case 'solid-1':
+                        chatBackground.style.backgroundImage = 'none';
+                        chatBackground.style.backgroundColor = '#7EC4CF';
+                        break;
+                    case 'solid-2':
+                        chatBackground.style.backgroundImage = 'none';
+                        chatBackground.style.backgroundColor = '#A5D6A7';
+                        break;
+                    case 'custom':
+                        if (customWallpaper) {
+                            chatBackground.style.backgroundImage = `url(${customWallpaper})`;
+                            chatBackground.style.backgroundColor = 'transparent';
+                        }
+                        break;
+                }
+                
+                hideWallpaperModal();
+            }
+            
+            // Handle file upload
+            function handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                loadingIndicator.style.display = 'flex';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    parseWhatsAppChat(content, file.name);
+                    loadingIndicator.style.display = 'none';
+                    showChatScreen();
+                };
+                reader.onerror = function() {
+                    loadingIndicator.style.display = 'none';
+                    alert('Error reading the file. Please try again.');
+                };
+                reader.readAsText(file);
+            }
+            
+            // Show chat screen
+            function showChatScreen() {
+                uploadScreen.style.display = 'none';
+                chatScreen.style.display = 'flex';
+            }
+            
+            // Show upload screen
+            function showUploadScreen() {
+                chatScreen.style.display = 'none';
+                uploadScreen.style.display = 'flex';
+                fileUpload.value = ''; // Reset file input
+            }
+            
+            // Function to parse WhatsApp chat content
+            function parseWhatsAppChat(content, fileName) {
+                chatContainer.innerHTML = '';
+                
+                // Common formats for WhatsApp export timestamps
+                const datePatterns = [
+                    // [DD/MM/YY, HH:mm:ss] or [DD/MM/YYYY, HH:mm:ss]
+                    /^\[(\d{1,2}\/\d{1,2}\/\d{2,4}),\s(\d{1,2}:\d{2}(?::\d{2})?)\]\s(.*?):\s(.*)$/,
+                    // DD/MM/YY, HH:mm - or DD/MM/YYYY, HH:mm -
+                    /^(\d{1,2}\/\d{1,2}\/\d{2,4}),\s(\d{1,2}:\d{2}(?::\d{2})?)\s-\s(.*?):\s(.*)$/,
+                    // MM/DD/YY, HH:mm - or MM/DD/YYYY, HH:mm -
+                    /^(\d{1,2}\/\d{1,2}\/\d{2,4}),\s(\d{1,2}:\d{2}(?::\d{2})?)\s-\s(.*?):\s(.*)$/,
+                    // YYYY-MM-DD, HH:mm - 
+                    /^(\d{4}-\d{2}-\d{2}),\s(\d{1,2}:\d{2}(?::\d{2})?)\s-\s(.*?):\s(.*)$/
+                ];
+                
+                // Pattern for system messages
+                const systemMessagePattern = /^(\d{1,2}\/\d{1,2}\/\d{2,4}),\s(\d{1,2}:\d{2}(?::\d{2})?)\s-\s(.*)$/;
+                
+                const lines = content.split('\n');
+                let currentDate = '';
+                let participants = new Set();
+                let userMessageCount = {};
+                let mainUser = '';
+                
+                // First pass: collect participants and message counts
+                lines.forEach(line => {
+                    let matched = false;
+                    for (const pattern of datePatterns) {
+                        const match = line.match(pattern);
+                        if (match) {
+                            const sender = match[3];
+                            participants.add(sender);
+                            userMessageCount[sender] = (userMessageCount[sender] || 0) + 1;
+                            matched = true;
+                            break;
+                        }
+                    }
+                });
+                
+                // Determine main user (person with most messages)
+                if (Object.keys(userMessageCount).length > 0) {
+                    mainUser = Object.keys(userMessageCount).reduce((a, b) => 
+                        userMessageCount[a] > userMessageCount[b] ? a : b);
+                }
+                
+                // Set chat title from filename or participants
+                if (participants.size > 0) {
+                    if (participants.size === 1) {
+                        chatTitle.textContent = Array.from(participants)[0];
+                    } else {
+                        chatTitle.textContent = fileName.replace('.txt', '') || 'Group Chat';
+                    }
+                }
+                
+                // Process lines
+                let lastMessageSender = null;
+                let multiLineMessageContent = null;
+                let multiLineMessageData = null;
+                
+                lines.forEach(line => {
+                    let matched = false;
+                    
+                    // Check for date patterns
+                    for (const pattern of datePatterns) {
+                        const match = line.match(pattern);
+                        if (match) {
+                            const dateStr = match[1];
+                            const timeStr = match[2];
+                            const sender = match[3];
+                            const message = match[4];
+                            
+                            // Process any pending multiline message
+                            if (multiLineMessageContent !== null) {
+                                addChatMessage(
+                                    multiLineMessageData.sender,
+                                    multiLineMessageContent,
+                                    multiLineMessageData.time,
+                                    multiLineMessageData.date,
+                                    mainUser,
+                                    multiLineMessageData.sender === lastMessageSender
+                                );
+                                multiLineMessageContent = null;
+                                multiLineMessageData = null;
+                            }
+                            
+                            // Check if date changed, add date header if needed
+                            if (dateStr !== currentDate) {
+                                addDateHeader(dateStr);
+                                currentDate = dateStr;
+                            }
+                            
+                            addChatMessage(sender, message, timeStr, dateStr, mainUser, sender === lastMessageSender);
+                            lastMessageSender = sender;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    
+                    // If not a new message, check if it's a continuation of previous message
+                    if (!matched && lastMessageSender !== null) {
+                        // Check if it's a system message
+                        const systemMatch = line.match(systemMessagePattern);
+                        if (systemMatch) {
+                            const dateStr = systemMatch[1];
+                            const timeStr = systemMatch[2];
+                            const systemMsg = systemMatch[3];
+                            
+                            // Check if date changed
+                            if (dateStr !== currentDate) {
+                                addDateHeader(dateStr);
+                                currentDate = dateStr;
+                            }
+                            
+                            addSystemMessage(systemMsg, timeStr);
+                            lastMessageSender = null;
+                            matched = true;
+                        } else if (line.trim() !== '') {
+                            // This is likely a continuation of the previous message
+                            if (multiLineMessageContent === null) {
+                                // Start a new multiline message
+                                multiLineMessageContent = line;
+                                multiLineMessageData = {
+                                    sender: lastMessageSender,
+                                    time: document.querySelector('.message:last-child .message-time').textContent,
+                                    date: currentDate
+                                };
+                                // Remove the last message as we'll combine it
+                                chatContainer.removeChild(chatContainer.lastChild);
+                            } else {
+                                // Continue the multiline message
+                                multiLineMessageContent += '\n' + line;
+                            }
+                            matched = true;
+                        }
+                    }
+                });
+                
+                // Process any pending multiline message at the end
+                if (multiLineMessageContent !== null) {
+                    addChatMessage(
+                        multiLineMessageData.sender,
+                        multiLineMessageContent,
+                        multiLineMessageData.time,
+                        multiLineMessageData.date,
+                        mainUser,
+                        true
+                    );
+                }
+                
+                // Scroll to bottom when done
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // Update chat status with participant info
+                if (participants.size > 1) {
+                    chatStatus.textContent = `${participants.size} participants`;
+                } else {
+                    chatStatus.textContent = 'Private conversation';
+                }
+            }
+            
+            // Add a new chat message to the container
+            function addChatMessage(sender, content, time, date, mainUser, isSameSender) {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = 'message-container';
+                
+                const message = document.createElement('div');
+                message.className = sender === mainUser ? 'message message-outgoing' : 'message message-incoming';
+                
+                // Add sender name for incoming messages (if not same sender as previous message)
+                if (sender !== mainUser && !isSameSender) {
+                    const senderEl = document.createElement('div');
+                    senderEl.className = 'message-sender';
+                    senderEl.textContent = sender;
+                    message.appendChild(senderEl);
+                }
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageContent.textContent = content;
+                message.appendChild(messageContent);
+                
+                const messageTime = document.createElement('span');
+                messageTime.className = 'message-time';
+                messageTime.textContent = time;
+                message.appendChild(messageTime);
+                
+                messageContainer.appendChild(message);
+                chatContainer.appendChild(messageContainer);
+            }
+            
+            // Add a date header to the chat
+            function addDateHeader(dateStr) {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'date-header';
+                
+                const datePill = document.createElement('div');
+                datePill.className = 'date-pill';
+                datePill.textContent = formatDate(dateStr);
+                
+                dateHeader.appendChild(datePill);
+                chatContainer.appendChild(dateHeader);
+            }
+            
+            // Format date in a readable way
+            function formatDate(dateStr) {
+                try {
+                    // Handle different date formats
+                    let date;
+                    if (dateStr.includes('/')) {
+                        const parts = dateStr.split('/');
+                        if (parts.length === 3) {
+                            // Try to determine format (DD/MM/YYYY or MM/DD/YYYY)
+                            if (parts[0].length === 4) { // YYYY/MM/DD
+                                date = new Date(parts[0], parts[1] - 1, parts[2]);
+                            } else if (parts[2].length === 4) { // DD/MM/YYYY or MM/DD/YYYY
+                                // Assume DD/MM/YYYY (most common in WhatsApp)
+                                date = new Date(parts[2], parts[1] - 1, parts[0]);
+                            } else { // DD/MM/YY or MM/DD/YY
+                                date = new Date(2000 + parseInt(parts[2]), parts[1] - 1, parts[0]);
+                            }
+                        }
+                    } else if (dateStr.includes('-')) { // YYYY-MM-DD
+                        date = new Date(dateStr);
+                    }
+                    
+                    if (date && !isNaN(date.getTime())) {
+                        const today = new Date();
+                        const yesterday = new Date(today);
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        
+                        if (date.toDateString() === today.toDateString()) {
+                            return 'Today';
+                        } else if (date.toDateString() === yesterday.toDateString()) {
+                            return 'Yesterday';
+                        } else {
+                            return date.toLocaleDateString(undefined, { 
+                                weekday: 'long', 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error formatting date:', e);
+                }
+                
+                return dateStr; // Fallback to original string
+            }
+            
+            // Add a system message
+            function addSystemMessage(content, time) {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = 'message-container';
+                
+                const message = document.createElement('div');
+                message.className = 'date-header';
+                
+                const systemMessage = document.createElement('div');
+                systemMessage.className = 'date-pill';
+                systemMessage.style.backgroundColor = '#FFF9C4';
+                systemMessage.style.color = '#6D4C41';
+                systemMessage.textContent = content;
+                
+                message.appendChild(systemMessage);
+                messageContainer.appendChild(message);
+                chatContainer.appendChild(messageContainer);
+            }
+        });
+    </script>
+</body>
+</html>
